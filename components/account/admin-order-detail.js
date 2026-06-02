@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import Button from "@/components/button";
 import { useAuth } from "@/components/providers/auth-provider";
-import { fetchAdminOrderById } from "@/lib/api-client";
+import { fetchAdminOrderById, updateAdminOrderStatus } from "@/lib/api-client";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import OrderStatusBadge from "@/components/account/order-status-badge";
 
@@ -13,6 +13,8 @@ export default function AdminOrderDetail({ orderId }) {
   const [order, setOrder] = useState(null);
   const [error, setError] = useState("");
   const [isLoadingOrder, setIsLoadingOrder] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [updateError, setUpdateError] = useState("");
 
   useEffect(() => {
     if (!user?.isAdmin) {
@@ -46,6 +48,19 @@ export default function AdminOrderDetail({ orderId }) {
       cancelled = true;
     };
   }, [orderId, user?.isAdmin]);
+
+  async function handleStatusChange(nextStatus) {
+    try {
+      setIsUpdating(true);
+      setUpdateError("");
+      const payload = await updateAdminOrderStatus(orderId, { status: nextStatus });
+      setOrder(payload.order);
+    } catch (updateErr) {
+      setUpdateError(updateErr.message);
+    } finally {
+      setIsUpdating(false);
+    }
+  }
 
   if (isLoadingAuth || isLoadingOrder) {
     return <div className="panel h-72 animate-pulse" />;
@@ -86,6 +101,30 @@ export default function AdminOrderDetail({ orderId }) {
             <span className="text-lg font-semibold">{formatCurrency(order.pricing.total)}</span>
           </div>
         </div>
+      </div>
+
+      <div className="panel p-6">
+        <p className="muted-label mb-4">Update status</p>
+        <div className="flex flex-wrap items-center gap-3">
+          {["payment_pending", "processing", "packed", "shipped", "delivered", "cancelled"].map((status) => (
+            <button
+              key={status}
+              type="button"
+              onClick={() => handleStatusChange(status)}
+              disabled={isUpdating || order.status === status}
+              className={`rounded-full border px-4 py-2 text-xs uppercase tracking-[0.18em] transition disabled:cursor-not-allowed ${
+                order.status === status
+                  ? "border-black bg-black text-white"
+                  : "border-black/10 text-black/65 hover:border-black/20 hover:bg-black/5 disabled:opacity-40"
+              }`}
+            >
+              {status.replaceAll("_", " ")}
+            </button>
+          ))}
+        </div>
+        {updateError ? (
+          <p className="mt-3 text-sm text-red-600">{updateError}</p>
+        ) : null}
       </div>
 
       <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
