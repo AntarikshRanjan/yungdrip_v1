@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Check } from "lucide-react";
+import { Check, Sparkles } from "lucide-react";
 import Button from "@/components/button";
+import StyleAIModal from "@/components/style-ai-modal";
 import { useCart } from "@/components/providers/cart-provider";
 import { cn, formatCurrency } from "@/lib/utils";
 
@@ -12,6 +13,7 @@ export default function ProductPurchasePanel({ product }) {
   const [selectedSize, setSelectedSize] = useState(availableSizes[0] || "");
   const [selectedColor, setSelectedColor] = useState(availableColors[0] || "");
   const [isAdding, setIsAdding] = useState(false);
+  const [styleAIOpen, setStyleAIOpen] = useState(false);
   const { addItem } = useCart();
   const canAddToCart = Boolean(selectedSize && selectedColor);
 
@@ -103,6 +105,21 @@ export default function ProductPurchasePanel({ product }) {
           Selected: {selectedSize} / {selectedColor}
         </div>
       </div>
+
+      <button
+        type="button"
+        onClick={() => setStyleAIOpen(true)}
+        className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full border border-black/15 bg-white px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-black transition hover:-translate-y-0.5 hover:border-black/30 hover:shadow-sm"
+      >
+        <Sparkles className="h-3.5 w-3.5" />
+        Style.AI ✨
+      </button>
+
+      <StyleAIModal
+        open={styleAIOpen}
+        onClose={() => setStyleAIOpen(false)}
+        currentProduct={product}
+      />
     </div>
   );
 }

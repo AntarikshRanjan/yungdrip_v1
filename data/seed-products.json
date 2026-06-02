@@ -112,5 +112,24 @@
       "style": ["Basics", "Layering", "Minimal"]
     },
     "featured": false
+  },
+  {
+    "_id": "demo-style-ai-001",
+    "name": "Classic Crewneck Sweatshirt",
+    "price": 82,
+    "description": "A mid-weight brushed cotton crewneck with a clean dropped shoulder fit and ribbed cuffs — the kind of piece you reach for without thinking.",
+    "category": "Hoodies",
+    "images": [
+      "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?auto=format&fit=crop&w=1200&q=80",
+      "https://images.unsplash.com/photo-1598522325074-042db73aa4e6?auto=format&fit=crop&w=1200&q=80"
+    ],
+    "sizes": ["S", "M", "L", "XL"],
+    "colors": ["Stone", "Midnight", "Olive"],
+    "tags": {
+      "bodyType": ["Slim", "Athletic", "Regular", "Heavy", "Plus Size"],
+      "skinTone": ["Fair", "Light", "Medium", "Olive", "Dark"],
+      "style": ["Minimal", "Relaxed", "Streetwear", "Layering"]
+    },
+    "featured": true
   }
 ]

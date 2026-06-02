@@ -9,6 +9,7 @@ import OutfitRecommendationModal from "@/components/outfit-recommendation-modal"
 import Reveal from "@/components/reveal";
 import Button from "@/components/button";
 import { fetchProductById, fetchProducts } from "@/lib/api-client";
+import { getFallbackProducts } from "@/lib/fallback-products";
 
 function ProductDetailSkeleton() {
   return (
@@ -33,7 +34,15 @@ export default function ProductDetailClient({ productId }) {
         setIsLoading(true);
         setError("");
 
-        const nextProduct = await fetchProductById(productId);
+        let nextProduct;
+        try {
+          nextProduct = await fetchProductById(productId);
+        } catch {
+          // DB unavailable — serve from seed data so the page works offline
+          const fallbacks = getFallbackProducts();
+          nextProduct = fallbacks.find((p) => p._id === productId) ?? null;
+          if (!nextProduct) throw new Error("Product not found");
+        }
 
         if (isCancelled) {
           return;
@@ -41,9 +50,14 @@ export default function ProductDetailClient({ productId }) {
 
         setProduct(nextProduct);
 
-        const nextRelatedProducts = await fetchProducts({
-          category: nextProduct.category
-        });
+        let nextRelatedProducts = [];
+        try {
+          nextRelatedProducts = await fetchProducts({ category: nextProduct.category });
+        } catch {
+          nextRelatedProducts = getFallbackProducts().filter(
+            (p) => p.category === nextProduct.category
+          );
+        }
 
         if (!isCancelled) {
           setRelatedProducts(nextRelatedProducts.filter((item) => item._id !== nextProduct._id).slice(0, 3));

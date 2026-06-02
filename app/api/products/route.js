@@ -21,7 +21,17 @@ export async function GET(request) {
 
     return NextResponse.json(products);
   } catch (error) {
-    return handleApiError(error);
+    // DB unavailable — return seed data so pages render without a running database
+    try {
+      const { getFallbackProducts } = await import("@/lib/fallback-products");
+      let products = getFallbackProducts();
+      if (category && category !== "All") products = products.filter((p) => p.category === category);
+      if (search) products = products.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()));
+      if (featured) products = products.filter((p) => p.featured);
+      return NextResponse.json(products);
+    } catch {
+      return handleApiError(error);
+    }
   }
 }
 
