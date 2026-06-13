@@ -16,6 +16,7 @@
     "lucide-react": "^0.468.0",
     "mongoose": "^8.8.3",
     "next": "^14.2.21",
+    "resend": "^4.8.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "three": "^0.165.0"

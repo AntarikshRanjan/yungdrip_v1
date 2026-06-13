@@ -1,7 +1,9 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import Toast from "@/components/toast";
+import { useAuth } from "@/components/providers/auth-provider";
+import { mergeServerCart, saveServerCart } from "@/lib/api-client";
 
 const CartContext = createContext(null);
 const STORAGE_KEY = "yungdrip-cart";
@@ -37,9 +39,17 @@ function isValidProductForCart(product, selection) {
 }
 
 export function CartProvider({ children }) {
+  const { user, isLoading: isAuthLoading } = useAuth();
   const [items, setItems] = useState([]);
   const [isHydrated, setIsHydrated] = useState(false);
   const [toast, setToast] = useState(null);
+  const hasMergedRef = useRef(false);
+  const skipNextSyncRef = useRef(false);
+  const localItemsRef = useRef([]);
+
+  useEffect(() => {
+    localItemsRef.current = items;
+  }, [items]);
 
   useEffect(() => {
     const savedCart = window.localStorage.getItem(STORAGE_KEY);
@@ -72,6 +82,63 @@ export function CartProvider({ children }) {
     const timer = window.setTimeout(() => setToast(null), 2400);
     return () => window.clearTimeout(timer);
   }, [toast]);
+
+  useEffect(() => {
+    if (isAuthLoading || !isHydrated) {
+      return;
+    }
+
+    if (!user) {
+      hasMergedRef.current = false;
+      return;
+    }
+
+    if (hasMergedRef.current) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function mergeCartOnLogin() {
+      try {
+        const payload = await mergeServerCart({ items: localItemsRef.current });
+        const mergedItems = payload.cart?.items || [];
+
+        if (!cancelled) {
+          skipNextSyncRef.current = true;
+          setItems(mergedItems.filter(isValidCartItem));
+          hasMergedRef.current = true;
+        }
+      } catch {
+        if (!cancelled) {
+          hasMergedRef.current = true;
+        }
+      }
+    }
+
+    mergeCartOnLogin();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user, isAuthLoading, isHydrated]);
+
+  useEffect(() => {
+    if (!user || !isHydrated || !hasMergedRef.current) {
+      return;
+    }
+
+    if (skipNextSyncRef.current) {
+      skipNextSyncRef.current = false;
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      saveServerCart({ items }).catch(() => {});
+    }, 400);
+
+    return () => window.clearTimeout(timer);
+  }, [items, user, isHydrated]);
 
   const showToast = useCallback((message) => {
     setToast(message);
@@ -122,7 +189,8 @@ export function CartProvider({ children }) {
 
   const updateQuantity = useCallback((cartKey, nextQuantity) => {
     if (nextQuantity <= 0) {
-      removeItem(cartKey);
+      setItems((currentItems) => currentItems.filter((item) => item.cartKey !== cartKey));
+      showToast("Item removed from cart");
       return;
     }
 
@@ -131,7 +199,7 @@ export function CartProvider({ children }) {
         item.cartKey === cartKey ? { ...item, quantity: nextQuantity } : item
       )
     );
-  }, [removeItem]);
+  }, [showToast]);
 
   const clearCart = useCallback(() => {
     setItems([]);

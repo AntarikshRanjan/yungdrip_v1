@@ -16,7 +16,14 @@ export default function AdminOrdersDashboard() {
   const [error, setError] = useState("");
   const [isLoadingOrders, setIsLoadingOrders] = useState(true);
   const [activeStatus, setActiveStatus] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [updatingOrderId, setUpdatingOrderId] = useState("");
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedSearch(searchQuery.trim()), 300);
+    return () => window.clearTimeout(timer);
+  }, [searchQuery]);
 
   useEffect(() => {
     if (!user?.isAdmin) {
@@ -30,7 +37,8 @@ export default function AdminOrdersDashboard() {
       try {
         setIsLoadingOrders(true);
         const payload = await fetchAdminOrders({
-          status: activeStatus === "all" ? "" : activeStatus
+          status: activeStatus === "all" ? "" : activeStatus,
+          search: debouncedSearch
         });
 
         if (!cancelled) {
@@ -52,7 +60,7 @@ export default function AdminOrdersDashboard() {
     return () => {
       cancelled = true;
     };
-  }, [activeStatus, user?.isAdmin]);
+  }, [activeStatus, debouncedSearch, user?.isAdmin]);
 
   async function handleStatusChange(orderId, status) {
     try {
@@ -85,7 +93,18 @@ export default function AdminOrdersDashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="panel p-6">
+      <div className="panel p-6 space-y-5">
+        <label className="block space-y-2">
+          <span className="text-xs uppercase tracking-[0.18em] text-black/45">Search orders</span>
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            placeholder="Order number, customer name, or email"
+            className="w-full rounded-[1.25rem] border border-black/10 px-4 py-3 text-sm outline-none transition focus:border-black/30"
+          />
+        </label>
+
         <div className="flex flex-wrap gap-3">
           {["all", ...statusOptions].map((status) => (
             <button

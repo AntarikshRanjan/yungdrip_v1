@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Button from "@/components/button";
 import { useAuth } from "@/components/providers/auth-provider";
 import { createAdminProduct, fetchProductById, updateAdminProduct } from "@/lib/api-client";
+import { buildInventoryFromProduct } from "@/lib/inventory-utils";
 
 function arrayToInput(arr) {
   return Array.isArray(arr) ? arr.join(", ") : "";
@@ -28,7 +29,8 @@ const EMPTY_FORM = {
   featured: false,
   tagsBodyType: "",
   tagsSkinTone: "",
-  tagsStyle: ""
+  tagsStyle: "",
+  stockPerVariant: "25"
 };
 
 export default function AdminProductForm({ productId }) {
@@ -62,7 +64,10 @@ export default function AdminProductForm({ productId }) {
             featured: Boolean(product.featured),
             tagsBodyType: arrayToInput(product.tags?.bodyType),
             tagsSkinTone: arrayToInput(product.tags?.skinTone),
-            tagsStyle: arrayToInput(product.tags?.style)
+            tagsStyle: arrayToInput(product.tags?.style),
+            stockPerVariant: product.inventory?.length
+              ? String(Math.max(...product.inventory.map((entry) => entry.quantity), 0))
+              : "25"
           });
         }
       } catch (loadError) {
@@ -105,7 +110,14 @@ export default function AdminProductForm({ productId }) {
         bodyType: inputToArray(form.tagsBodyType),
         skinTone: inputToArray(form.tagsSkinTone),
         style: inputToArray(form.tagsStyle)
-      }
+      },
+      inventory: buildInventoryFromProduct(
+        {
+          sizes: inputToArray(form.sizes),
+          colors: inputToArray(form.colors)
+        },
+        Math.max(0, Number(form.stockPerVariant) || 0)
+      )
     };
 
     try {
@@ -240,6 +252,19 @@ export default function AdminProductForm({ productId }) {
                 onChange={(e) => updateField("colors", e.target.value)}
                 className={inputClass}
                 placeholder="Black, White, Stone"
+                required
+              />
+            </label>
+
+            <label className={labelClass}>
+              <span>Stock per size/color variant</span>
+              <input
+                type="number"
+                min="0"
+                value={form.stockPerVariant}
+                onChange={(e) => updateField("stockPerVariant", e.target.value)}
+                className={inputClass}
+                placeholder="25"
                 required
               />
             </label>

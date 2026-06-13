@@ -32,7 +32,14 @@ async function seed() {
         skinTone: [String],
         style: [String]
       },
-      featured: Boolean
+      featured: Boolean,
+      inventory: [
+        {
+          size: String,
+          color: String,
+          quantity: Number
+        }
+      ]
     },
     {
       timestamps: true
@@ -41,10 +48,25 @@ async function seed() {
 
   const Product = mongoose.models.Product || mongoose.model("Product", productSchema);
 
-  await Product.deleteMany({});
-  await Product.insertMany(products);
+  const seededProducts = products.map((product) => {
+    const inventory = [];
 
-  console.log(`Seeded ${products.length} products into ${MONGODB_DB_NAME || path.basename(MONGODB_URI)}`);
+    for (const size of product.sizes || []) {
+      for (const color of product.colors || []) {
+        inventory.push({ size, color, quantity: 25 });
+      }
+    }
+
+    return {
+      ...product,
+      inventory
+    };
+  });
+
+  await Product.deleteMany({});
+  await Product.insertMany(seededProducts);
+
+  console.log(`Seeded ${seededProducts.length} products into ${MONGODB_DB_NAME || path.basename(MONGODB_URI)}`);
 }
 
 seed()

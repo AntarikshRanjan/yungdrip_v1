@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSession, registerUser } from "@/lib/auth";
 import { handleApiError } from "@/lib/api-response";
+import { sendWelcomeEmail } from "@/lib/email";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { assertTrustedOrigin, getClientIp } from "@/lib/security";
 
@@ -25,6 +26,7 @@ export async function POST(request) {
     });
     const user = await registerUser(body);
     await createSession(user._id);
+    await sendWelcomeEmail(user).catch(() => {});
 
     return NextResponse.json({
       user

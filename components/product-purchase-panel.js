@@ -5,6 +5,7 @@ import { Check, Sparkles } from "lucide-react";
 import Button from "@/components/button";
 import StyleAIModal from "@/components/style-ai-modal";
 import { useCart } from "@/components/providers/cart-provider";
+import { getStockForVariant } from "@/lib/inventory-utils";
 import { cn, formatCurrency } from "@/lib/utils";
 
 export default function ProductPurchasePanel({ product }) {
@@ -15,7 +16,8 @@ export default function ProductPurchasePanel({ product }) {
   const [isAdding, setIsAdding] = useState(false);
   const [styleAIOpen, setStyleAIOpen] = useState(false);
   const { addItem } = useCart();
-  const canAddToCart = Boolean(selectedSize && selectedColor);
+  const selectedStock = getStockForVariant(product, selectedSize, selectedColor);
+  const canAddToCart = Boolean(selectedSize && selectedColor && (selectedStock === null || selectedStock > 0));
 
   async function handleAddToCart() {
     if (!canAddToCart) {
@@ -38,6 +40,11 @@ export default function ProductPurchasePanel({ product }) {
       <p className="muted-label">{product.category}</p>
       <h1 className="mt-3 text-5xl font-semibold text-balance">{product.name}</h1>
       <p className="mt-4 text-2xl font-semibold">{formatCurrency(product.price)}</p>
+      {selectedStock !== null ? (
+        <p className="mt-2 text-sm text-black/55">
+          {selectedStock > 0 ? `${selectedStock} in stock for ${selectedSize} / ${selectedColor}` : "Out of stock for this variant"}
+        </p>
+      ) : null}
       <p className="mt-5 leading-7 text-black/65">{product.description}</p>
 
       <div className="mt-8 space-y-6">
@@ -97,6 +104,8 @@ export default function ProductPurchasePanel({ product }) {
               <Check className="h-4 w-4" />
               Added
             </span>
+          ) : selectedStock === 0 ? (
+            "Out of Stock"
           ) : (
             "Add to Cart"
           )}

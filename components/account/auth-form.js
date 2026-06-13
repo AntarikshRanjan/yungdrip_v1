@@ -124,6 +124,14 @@ export default function AuthForm({ mode = "login" }) {
               />
             </label>
 
+            {!isRegister ? (
+              <p className="text-right text-sm text-black/55">
+                <Link href="/forgot-password" className="underline underline-offset-4">
+                  Forgot password?
+                </Link>
+              </p>
+            ) : null}
+
             {error ? (
               <div className="rounded-[1.25rem] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
                 {error}

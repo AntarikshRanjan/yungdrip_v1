@@ -67,6 +67,16 @@ const productSchema = new Schema(
     featured: {
       type: Boolean,
       default: false
+    },
+    inventory: {
+      type: [
+        {
+          size: { type: String, required: true },
+          color: { type: String, required: true },
+          quantity: { type: Number, required: true, min: 0, default: 0 }
+        }
+      ],
+      default: []
     }
   },
   {
